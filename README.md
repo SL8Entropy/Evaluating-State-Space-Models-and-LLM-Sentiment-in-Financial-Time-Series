@@ -1,30 +1,31 @@
-# SAMBA-FinBERT: Leveraging News Sentiment as a Feature for S&P 500 Prediction
+# Evaluating State-Space Models and LLM Sentiment in Financial Time-Series: A SHAP and Regime-Based Study
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Framework](https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg)](https://pytorch.org/)
 
-> **A PyTorch implementation of a hybrid forecasting architecture that integrates SAMBA (Mamba-based State Space Model) with FinBERT sentiment analysis.**
+> **A PyTorch implementation evaluating hybrid forecasting architectures, integrating state-space models (SAMBA, MambaStock) and traditional baselines with FinBERT sentiment analysis, enhanced by SHAP explainability.**
 
 ---
 
 ## 📌 Overview
 
-This repository implements **SAMBA-FinBERT**, a model designed to tackle non-stationary financial time series forecasting.
+This repository provides the codebase for a comprehensive comparative study evaluating how different sequence models tackle non-stationary financial time-series forecasting. 
 
-It addresses the limitations of standard architectures (LSTMs/Transformers) by combining:
+Rather than focusing on a single architecture, this framework addresses the limitations of standard networks by evaluating the combination of:
 
-1.  **SAMBA Backbone:** An adaptation of the Mamba architecture for linear-time sequence modeling of quantitative data (OHLCV).
-2.  **FinBERT Integration:** A pre-trained financial LLM to process news headlines and inject "qualitative" sentiment signals into the predictive loop.
-3.  **Walk-Forward Validation:** A rigorous testing protocol that eliminates look-ahead bias, ensuring the model is evaluated under realistic "live trading" conditions.
+1.  **State-Space Model Backbones:** Implementations of Mamba-based architectures (SAMBA, MambaStock) alongside standard baselines (LSTM, DLinear) for the efficient, linear-time sequence modelling of quantitative market data (OHLCV).
+2.  **FinBERT Integration:** A pre-trained financial LLM to process news headlines, injecting qualitative sentiment signals to contextualise price movements.
+3.  **Explainability & Regime Analysis:** Utilisation of SHAP (Shapley Additive Explanations) to interpret feature importance, coupled with performance evaluation across varying market volatility regimes.
+4.  **Walk-Forward Validation:** A rigorous testing protocol that eliminates look-ahead bias, ensuring all models are evaluated under realistic "live trading" conditions.
 
 ---
 
 ## 🏗️ System Architecture
 
-The model processes two distinct data streams:
+The evaluation pipeline processes two distinct data streams across multiple predictive engines:
 
-* **Quantitative Stream:** Historical price data (Open, High, Low, Close, Volume) is processed via the **SAMBA** block, which utilizes a Selective Scan Mechanism (S6) to capture long-term dependencies without the quadratic computational cost of attention.
-* **Qualitative Stream:** News headlines are processed by **FinBERT** to generate a bounded daily sentiment score $[-1, 1]$. This score serves as a dynamic covariate, modulating the model's state transitions during high-volatility periods.
+* **Quantitative Stream:** Historical price data and technical indicators are processed via the chosen predictive engine (e.g., SAMBA, MambaStock, LSTM). The state-space models utilise a Selective Scan Mechanism to capture long-term market dependencies without the quadratic computational cost of standard attention mechanisms.
+* **Qualitative Stream:** News headlines are processed by **FinBERT** to generate a bounded daily sentiment score $[-1, 1]$. This score serves as a dynamic covariate, acting alongside structural price data to evaluate how different architectures weight narrative sentiment during high-volatility periods.
 
 ---
 
@@ -38,8 +39,9 @@ The model processes two distinct data streams:
 ### 1. Clone the Repository
 
 ```bash
-git clone [https://github.com/SL8Entropy/SAMBA-Finbert.git](https://github.com/SL8Entropy/SAMBA-Finbert.git)
-cd SAMBA-Finbert
+git clone [https://github.com/SL8Entropy/Evaluating-State-Space-Models-and-LLM-Sentiment-in-Financial-Time-Series.git](https://github.com/SL8Entropy/Evaluating-State-Space-Models-and-LLM-Sentiment-in-Financial-Time-Series.git)
+cd Evaluating-State-Space-Models-and-LLM-Sentiment-in-Financial-Time-Series
+
 ```
 
 ### 2. Install Dependencies
@@ -52,6 +54,7 @@ pip install torch torchvision torchaudio --index-url [https://download.pytorch.o
 pip install packaging
 pip install mamba-ssm causal-conv1d
 pip install -r requirements.txt
+
 ```
 
 ---
@@ -62,16 +65,15 @@ pip install -r requirements.txt
 
 This project requires two datasets:
 
-* **News Data:** S&P 500 News Headlines (or similar financial news corpus).
-* **Price Data:** OHLCV data for target indices (e.g. S&P 500).
+* **News Data:** S&P 500 News Headlines (or a similar financial news corpus).
+* **Price Data:** OHLCV data and technical indicators for target indices (e.g. S&P 500).
 
-Run the preprocessing script to tokenize news and generate daily sentiment scores:
+Run the preprocessing script to tokenise news and generate daily sentiment scores:
 
 ```bash
 python scripts/preprocess_finbert.py --input data/raw_news.csv --output data/sentiment_scores.csv
-```
 
-Here is the updated section for your README to include the two new models:
+```
 
 ### 2. Training and Testing
 
@@ -79,14 +81,16 @@ To train and evaluate the models on your dataset:
 
 ```bash
 python main.py --model samba --dataset "Dataset/sp500_with_indicators.csv" --num_features 26 --seed 5
+
 ```
 
 **Arguments:**
 
-* `--model`: Choose which model to train: `samba` (proposed model), `lstm` (baseline), `mambastock` (pure Mamba baseline), or `dlinear` (simple linear baseline). Default is `samba`.
-* `--dataset`: The file path to your target dataset CSV (e.g., `Dataset/sp500_with_indicators.csv`). 
+* `--model`: Choose which model to train: `samba` (adaptive graph state-space), `lstm` (recurrent baseline), `mambastock` (pure Mamba baseline), or `dlinear` (simple linear baseline). Default is `samba`.
+* `--dataset`: The file path to your target dataset CSV (e.g., `Dataset/sp500_with_indicators.csv`).
 * `--num_features`: The number of input parameters/features in your dataset. If not provided, it will attempt to default to the dataset's configuration.
 * `--seed`: Random seed for reproducibility. Overrides the default seed in the configuration file.
+
 ---
 
 ## 📊 Performance Metrics
@@ -94,17 +98,16 @@ python main.py --model samba --dataset "Dataset/sp500_with_indicators.csv" --num
 The implementation tracks four key metrics:
 
 * **IC (Information Coefficient):** Pearson correlation between predicted and actual returns.
-* **RIC (Rank IC):** Spearman rank correlation.
+* **RIC (Rank IC):** Spearman rank correlation (robust to outliers).
 * **MAE:** Mean Absolute Error.
 * **RMSE:** Root Mean Square Error.
 
-Refer to the `results/` directory for detailed logs and generated plots comparing the hybrid model against the standard baseline.
+Refer to the `results/` directory for detailed logs, SHAP summary plots, and visualisations comparing the hybrid models across distinct volatility regimes.
 
 ---
 
 ## 📂 Project Structure
 
-```plaintext
 SAMBA-FINBERT/
 |   abc.PNG
 |   main.py
@@ -179,19 +182,24 @@ SAMBA-FINBERT/
 |           model_utils.cpython-312.pyc
 |           __init__.cpython-312.pyc
 |
+
 ```
 
 ---
 
 ## 📄 Citation
 
-If you use this code in your research or find it helpful, please cite the associated paper (currently under review):
+If you use this codebase or find our framework helpful in your research, please cite our paper:
 
-```bibtex
-@article{sambathkumar2025samba,
-  title={SAMBA-FinBERT: Leveraging News Sentiment as a Feature for S\&P 500 Prediction},
-  author={Sambathkumar, Sudharshan},
+@article{sambathkumar2025evaluating,
+  title={Evaluating State-Space Models and LLM Sentiment in Financial Time-Series: A SHAP and Regime-Based Study},
+  author={Sambathkumar, Sudharshan and Abirami, K.},
   year={2025},
   journal={arXiv preprint arXiv:24XX.XXXXX}
 }
+
+```
+
+```
+
 ```
