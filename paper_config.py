@@ -87,7 +87,7 @@ def get_dataset_info():
         ],
         'total_features': 30,
         'time_period': '2015-03-06 to 2024-03-04',
-        'paper_title': 'SAMBA-FinBERT: Leveraging News Sentiment as a Feature for Financial Forecasting',
+        'paper_title': 'Evaluating-State-Space-Models-and-LLM-Sentiment-in-Financial-Time-Series',
         'conference': '',
         'authors': ['Sudharshan Sambathkumar', 'K.Abirami']
     }
